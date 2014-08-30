@@ -11,6 +11,7 @@ SYSTEMAPPS = "/usr/share/applications"
 LOCALAPPS = "~/.local/share/applications"
 APP_STORE = "~/.local/share/applications-categories"
 
+# Structure to hold category information
 class Cat_Struct(object):
 
     def __init__(self, key, name, translate, apps, 
@@ -23,7 +24,8 @@ class Cat_Struct(object):
         self.categories = categories
         self.excluded_apps = excluded_apps
 
-      
+
+# Structure to hold .desktop entry information      
 class Desktop_Entry(object):
 
     def __init__(self, de_name, de_gname, de_nodisp, de_hidden,
@@ -40,9 +42,11 @@ class Desktop_Entry(object):
         self.de_path = de_path      
       
       
-# ********** SyncThread **********
+# ********** Get Categories **********
 # 
-class GetCats(Cat_Struct):
+# Get current category configuration
+#
+class GetCats( ):
 
     categories = []
     dconf_cats = Gio.Settings("org.gnome.desktop.app-folders")
@@ -50,25 +54,21 @@ class GetCats(Cat_Struct):
     def __init__(self):
        pass
 
-    def get_current(self):
+    def get_categories(self):
 
-        categories = self._get_categories( )
-        print categories
-        for appcat in categories:
+        # Get the current overview categories        
+        categories = self._get_categories_list( )
         
+        # to be removed
+        print categories
 
-          self._get_folder_entry(appcat)
-          print "***********************" + self.key + "********************"
-          print self.name
-          print self.translate
-          print self.apps
-          print self.categories
-          print self.excluded_apps
+        for folder in categories:
+          self._get_folder_entry(folder)
          
     # *** _get_categories(self) - local
     # get categories using gsettings - folder-children
     # Should be at least set to [] on default install 
-    def _get_categories(self):
+    def _get_categories_list(self):
         categories=self.dconf_cats.get_value("folder-children")
         return categories
 
@@ -76,22 +76,40 @@ class GetCats(Cat_Struct):
     # Read the keys related to the provided category store in CatStruct
     # 'translate', 'categories', 'apps', 'excluded-apps', 'name'
     def _get_folder_entry(self, category):
-        folderapps = Gio.Settings.new_with_path("org.gnome.desktop.app-folders.folder", 
+        cat_data = Gio.Settings.new_with_path("org.gnome.desktop.app-folders.folder", 
             "/org/gnome/desktop/app-folders/folders/%s/" % (category))
-        self.key = category
-        self.name = folderapps.get_value('name')
-        self.translate = folderapps.get_value('translate')
-        self.apps = folderapps.get_value('apps')
-        self.categories = folderapps.get_value('categories')
-        self.excluded_apps = folderapps.get_value('excluded-apps')      
+        self.cat_entry = Cat_Struct(
+            category,
+            cat_data.get_value('name'),
+            cat_data.get_value('translate'),
+            cat_data.get_value('apps'),
+            cat_data.get_value('categories'),
+            cat_data.get_value('excluded-apps')
+        )      
+        # this will be debug in future
+        self._print_cat(self.cat_entry)
+        # will call to fill in orm database future
 
+    # will be logger output in future    
+    def _print_cat(self, entry):
+        print "***********************" + entry.key + "********************"
+        print entry.name
+        print entry.translate
+        print entry.apps
+        print entry.categories
+        print entry.excluded_apps
 
+        
+# ********** Get Desktop Entry **********
+# 
+# Get desktop entry data
+#
 class AppList( ):
 
     def __init__(self):
         pass
 
-    def get_apps(self):
+    def get_desktop(self):
         self._get_app_list(SYSTEMAPPS)
         self._get_app_list(LOCALAPPS)
 
@@ -140,8 +158,8 @@ if __name__ == "__main__":
         pass	
 	
 
-    GetCats( ).get_current( )
-    AppList( ).get_apps( )
+    GetCats( ).get_categories( )
+    AppList( ).get_desktop( )
     
 
 
