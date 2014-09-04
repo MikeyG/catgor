@@ -64,7 +64,7 @@ class AppList( ):
                          app_path
                      )
                      # this will be debug in future
-                     self._print_app(self.app_entry)
+                     #self._print_app(self.app_entry)
                      # will call to fill in orm database future
 
     # ************** Create Application DB **************

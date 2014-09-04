@@ -1,9 +1,5 @@
-from sqlalchemy import Table, Column, ForeignKey, Integer, String, Boolean
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm.exc import NoResultFound
-
-
 
 # The declarative_base() callable returns a new base class from 
 # which all mapped classes should inherit. When the class definition is 

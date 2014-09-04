@@ -1,4 +1,3 @@
-from sqlalchemy import create_engine
 from dbus.mainloop.glib import DBusGMainLoop
 
 import os
@@ -33,21 +32,21 @@ def _start_logging(verbose):
     #logging.basicConfig(level=logging.INFO)
         
     # create logger and set to debug
-    self.logger = logging.getLogger('catgor')
-    self.logger.setLevel(logging.DEBUG)
+    logger = logging.getLogger('catgor')
+    logger.setLevel(logging.DEBUG)
        
     fh = logging.FileHandler(APP_STORE+"/catgor.log")
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(logging.Formatter( 
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-    self.logger.addHandler(fh)
+    logger.addHandler(fh)
     if verbose:
         ch = logging.StreamHandler( )
         ch.setLevel(logging.DEBUG)
         ch.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-        self.logger.addHandler(ch)
+        logger.addHandler(ch)
 
-    self.logger.info('Logging started.')
+    logger.info('Logging started.')
 
 
 # creates directories - called from main( )

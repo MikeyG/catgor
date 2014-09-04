@@ -69,7 +69,7 @@ class GetCats(BaseInfo):
             cat_data.get_value('excluded-apps')
         )      
         # this will be debug in future
-        self._print_cat(self.cat_entry)
+        #self._print_cat(self.cat_entry)
         
         self._add_entry(self.cat_entry)
         
