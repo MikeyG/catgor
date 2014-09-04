@@ -1,13 +1,22 @@
 from gi.repository import Gio
 
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy import exc
+
+import models
+from base import BaseInfo
+
+# python built-in logging 
+import logging
+logger = logging.getLogger('catgor')
 
 # Structure to hold category information
 class Cat_Struct(object):
 
-    def __init__(self, key, name, translate, apps, 
+    def __init__(self, category, name, translate, apps, 
         categories, excluded_apps
     ):
-        self.key = key
+        self.category = category
         self.name = name
         self.translate = translate
         self.apps = apps
@@ -19,7 +28,7 @@ class Cat_Struct(object):
 # 
 # Get current category configuration
 #
-class GetCats( ):
+class GetCats(BaseInfo):
 
     categories = []
     dconf_cats = Gio.Settings("org.gnome.desktop.app-folders")
@@ -61,11 +70,38 @@ class GetCats( ):
         )      
         # this will be debug in future
         self._print_cat(self.cat_entry)
-        # will call to fill in orm database future
+        
+        self._add_entry(self.cat_entry)
+        
+
+    # ************** Create Category DB **************
+    #
+    def _add_entry(self, cat_entry):
+        """Add cat entry to database"""
+
+        # create new - models.py 
+        cat_record = models.Categories(category=cat_entry.category) 
+
+        # fill in values  
+        cat_record.fill_record(cat_entry) 
+
+        #logger.debug("Cat: Created cat record.")        
+        
+        # add/commit to local database
+        self.session.add(cat_record)
+
+        # add/commit to local database
+        self.session.add(cat_record)
+
+        try:
+            self.session.commit()
+        except exc.SQLAlchemyError:
+            logger.error("Commit error")
+
 
     # will be logger output in future    
     def _print_cat(self, entry):
-        print "***********************" + entry.key + "********************"
+        print "***********************" + entry.category + "********************"
         print entry.name
         print entry.translate
         print entry.apps

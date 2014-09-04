@@ -2,7 +2,14 @@ from xdg.DesktopEntry import DesktopEntry
 from xdg.Exceptions import ValidationError, ParsingError, NoKeyError
 from xdg.util import u
 
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy import exc
+
 import os
+
+# python built-in logging 
+import logging
+logger = logging.getLogger('catgor')
 
 SYSTEMAPPS = "/usr/share/applications"
 LOCALAPPS = "~/.local/share/applications"
@@ -60,9 +67,30 @@ class AppList( ):
                      self._print_app(self.app_entry)
                      # will call to fill in orm database future
 
+    # ************** Create Application DB **************
+    #
+    def _add_entry(self, app_entry):
+        """Add app entry to database"""
+
+        # create new - models.py 
+        cat_record = models.Categories(de_name=app_entry.de_name) 
+
+        # fill in values  
+        app_record.fill_record(app_entry) 
+
+        #logger.debug("App: Created app record.")        
+        
+        # add/commit to local database
+        self.session.add(app_record)
+
+        try:
+            self.session.commit()
+        except exc.SQLAlchemyError:
+            logger.error("Commit error")
+
     # will be logger output in future    
     def _print_app(self, entry):
-        print "********************************************"
+        logger.debug("********************************************")
         print entry.de_name
         print entry.de_gname
         print entry.de_nodisp 
