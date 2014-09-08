@@ -17,7 +17,7 @@ from catlist import GetCats
 APP_STORE = "~/.local/share/applications-categories"
 
 
-def _start_logging(verbose):
+def start_logging(verbose):
 
 
     # ************************************************************
@@ -35,7 +35,8 @@ def _start_logging(verbose):
     logger = logging.getLogger('catgor')
     logger.setLevel(logging.DEBUG)
        
-    fh = logging.FileHandler(APP_STORE+"/catgor.log")
+    fh = logging.FileHandler(
+        os.path.expanduser(APP_STORE+"/catgor.log"))
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(logging.Formatter( 
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
@@ -67,10 +68,10 @@ def main( ):
 
     # create everpad directories - _create_dirs local
     _create_dirs( )
+
+    start_logging("TRUE")
     
     BaseInfo.session = tools.get_db_session( )
-
-    #_start_logging("TRUE")
  
     GetCats( ).get_categories( )
     AppList( ).get_desktop( )            

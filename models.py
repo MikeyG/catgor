@@ -19,7 +19,8 @@ Base = declarative_base()
 #   translate - 
 #   apps -
 #   categories -
-#   excluded_apps -     
+#   excluded_apps -
+
 
 class Categories(Base):
     __tablename__ = 'categories'
@@ -56,7 +57,8 @@ class Categories(Base):
 #   de_cat - List of application categories
 #   de_path - full path to application desktop file 
 
-class Desktop_Apps(Base):
+
+class DesktopApps(Base):
     __tablename__ = 'desktop'
     id = Column(Integer, primary_key=True)
     de_name = Column(String)

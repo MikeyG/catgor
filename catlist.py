@@ -1,6 +1,6 @@
 from gi.repository import Gio
 
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+#from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy import exc
 
 import models
@@ -94,7 +94,7 @@ class GetCats(BaseInfo):
         self.session.add(cat_record)
 
         try:
-            self.session.commit()
+            self.session.commit( )
         except exc.SQLAlchemyError:
             logger.error("Commit error")
 
