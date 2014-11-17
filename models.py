@@ -102,16 +102,28 @@ class DesktopApps(Base):
         self.de_nodisp = app_entry.de_nodisp
         self.de_hidden = app_entry.de_hidden
         
-#        self.de_onlyshow = []
+
 #        for onlyshow in app_entry.de_onlyshow:
-#            self.de_onlyshow.append(onlyshow)
+#           session.query(Tag).filter(
+#                Tag.guid.in_(note.tagGuids),
+#            ).all()
+
 #        print self.de_onlyshow
 
-#        print app_entry.de_onlyshow
 
-        self.de_onlyshow = str(app_entry.de_onlyshow)
+
+#        self.de_onlyshow = app_entry.de_onlyshow
 #        self.de_notshow = app_entry.de_notshow
 #        self.de_cat = app_entry.de_cat
         self.de_path = app_entry.de_path 
         self.de_user = app_entry.de_user
         self.de_orphan = app_entry.de_orphan
+
+class DisplayManager(Base):
+    __tablename__ = 'dispman'
+    id = Column(Integer, primary_key=True)
+    dm_name = Column(String)    
+    
+    
+    
+    
