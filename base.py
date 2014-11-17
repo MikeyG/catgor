@@ -2,7 +2,8 @@
 class BaseInfo(object):
     """Base class"""
 
-    def __init__(self,  session):
+    def __init__(self):
         """Set shortcuts"""
-        self.session = session
+        self.session = ""
+        self.db_path = ""
         

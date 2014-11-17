@@ -17,7 +17,7 @@ from catlist import GetCats
 APP_STORE = "~/.local/share/applications-categories"
 
 
-def start_logging(verbose):
+def _start_logging(verbose):
 
 
     # ************************************************************
@@ -66,15 +66,24 @@ def main( ):
     # http://pymotw.com/2/signal/
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    # create everpad directories - _create_dirs local
+    # create directories - _create_dirs local
     _create_dirs( )
 
-    start_logging("TRUE")
-    
-    BaseInfo.session = tools.get_db_session( )
- 
-    GetCats( ).get_categories( )
-    AppList( ).get_desktop( )            
+    # call to start logging
+    _start_logging("TRUE")
+    logger = logging.getLogger('catgor')
+
+    # Setup database for use    
+    dbsession = tools.DatabaseInit( )    
+    logger.info("sqlalchemy version %s" % dbsession.get_sqlalchemy_version( )) 
+    logger.info("DB Path %s" % BaseInfo.db_path)
+    dbsession.get_db_session( )
+
+    AppList( ).get_desktop( ) 
+
+    # Get current overview configuration and insert into database
+    GetCats( ).get_categories(BaseInfo.session)
+           
 
 
 if __name__ == "__main__":

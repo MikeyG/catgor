@@ -28,7 +28,7 @@ class Cat_Struct(object):
 # 
 # Get current category configuration
 #
-class GetCats(BaseInfo):
+class GetCats( ):
 
     categories = []
     dconf_cats = Gio.Settings("org.gnome.desktop.app-folders")
@@ -36,21 +36,27 @@ class GetCats(BaseInfo):
     def __init__(self):
        pass
 
-    def get_categories(self):
+    def get_categories(self, session):
+
+        logger.debug('get_categories start')
 
         # Get the current overview categories        
         categories = self._get_categories_list( )
-        
-        # to be removed
-        print categories
 
-        for folder in categories:
-          self._get_folder_entry(folder)
+        for category in categories:
+            logger.debug('Category: %s' % category)       
+            self._get_folder_entry(category)
+
+        logger.debug('get_categories done')
          
     # *** _get_categories(self) - local
     # get categories using gsettings - folder-children
     # Should be at least set to [] on default install 
     def _get_categories_list(self):
+
+        logger.info("Process system categories")
+        logger.debug('_get_categories_list')
+
         categories=self.dconf_cats.get_value("folder-children")
         return categories
 
@@ -58,8 +64,16 @@ class GetCats(BaseInfo):
     # Read the keys related to the provided category store in CatStruct
     # 'translate', 'categories', 'apps', 'excluded-apps', 'name'
     def _get_folder_entry(self, category):
+    	
+        # new_with_path(schema_id: String, path: String)    	
         cat_data = Gio.Settings.new_with_path("org.gnome.desktop.app-folders.folder", 
             "/org/gnome/desktop/app-folders/folders/%s/" % (category))
+            
+        # http://wiki.gentoo.org/wiki/Gnome_Applications_Folders
+        #
+        # /usr/share/glib-2.0/schemas        
+        # org.gnome.desktop.app-folders.gschema.xml
+            
         self.cat_entry = Cat_Struct(
             category,
             cat_data.get_value('name'),
@@ -67,17 +81,21 @@ class GetCats(BaseInfo):
             cat_data.get_value('apps'),
             cat_data.get_value('categories'),
             cat_data.get_value('excluded-apps')
-        )      
-        # this will be debug in future
-        #self._print_cat(self.cat_entry)
+        )
         
-        self._add_entry(self.cat_entry)
-        
+        self._add_entry(self.cat_entry)      
 
+        
     # ************** Create Category DB **************
     #
     def _add_entry(self, cat_entry):
         """Add cat entry to database"""
+
+#        logger.debug('	Name: %s' % cat_entry.name)
+#        logger.debug('	Translate: %s' % cat_entry.translate)
+#        logger.debug('Apps: %s' % cat_entry.apps)
+#        logger.debug('Categories: %s' %  cat_entry.categories)      
+#        logger.debug('Excluded-apps: %s' % cat_entry.excluded_apps)
 
         # create new - models.py 
         cat_record = models.Categories(category=cat_entry.category) 
@@ -85,16 +103,13 @@ class GetCats(BaseInfo):
         # fill in values  
         cat_record.fill_record(cat_entry) 
 
-        #logger.debug("Cat: Created cat record.")        
+ #       logger.debug("Cat: Created cat record.")        
         
         # add/commit to local database
-        self.session.add(cat_record)
-
-        # add/commit to local database
-        self.session.add(cat_record)
+        BaseInfo.session.add(cat_record)
 
         try:
-            self.session.commit( )
+            BaseInfo.session.commit( )
         except exc.SQLAlchemyError:
             logger.error("Commit error")
 

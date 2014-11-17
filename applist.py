@@ -7,6 +7,9 @@ from sqlalchemy import exc
 
 import os
 
+import models
+from base import BaseInfo
+
 # python built-in logging 
 import logging
 logger = logging.getLogger('catgor')
@@ -17,10 +20,10 @@ LOCALAPPS = "~/.local/share/applications"
 # Structure to hold .desktop entry information      
 class Desktop_Entry(object):
 
-    def __init__(self, de_name, de_gname, de_nodisp, de_hidden,
-         de_onlyshow, de_notshow, de_cat, de_path
+    def __init__(self, de_file, de_name, de_gname, de_nodisp, de_hidden,
+         de_onlyshow, de_notshow, de_cat, de_path, de_user, de_orphan
     ): 
-
+        self.de_file = de_file           # desktop filename
         self.de_name = de_name
         self.de_gname = de_gname
         self.de_nodisp = de_nodisp
@@ -29,7 +32,9 @@ class Desktop_Entry(object):
         self.de_notshow = de_notshow
         self.de_cat = de_cat
         self.de_path = de_path   
-
+        self.de_user = de_user           # user directory or system
+        self.de_orphan = de_orphan       # orphan if only in config
+        
 
 # ********** Get Desktop Entry **********
 # 
@@ -41,31 +46,43 @@ class AppList( ):
         pass
 
     def get_desktop(self):
-        self._get_app_list(SYSTEMAPPS)
-        self._get_app_list(LOCALAPPS)
+       
+        logger.info("Process system desktop")
+        self._get_app_list(os.path.expanduser(SYSTEMAPPS), False)
+
+        logger.info("Process user desktop")
+        self._get_app_list(os.path.expanduser(LOCALAPPS), True)
 
     # *** _get_app_list
     # Takes a desktop entry directory and uses xdg module to pull in
     # all the data needed and stores in Desktop_Entry structure.
-    def _get_app_list(self, directory):
+    def _get_app_list(self, directory, user):
         for root, dirs, files in os.walk(directory):
             for name in files:
                 if name.endswith(".desktop"):
-                     app_path = root + "/" + name
-                     xgd_de = DesktopEntry(app_path)
-                     self.app_entry = Desktop_Entry(
-                         xgd_de.getName( ),
-                         xgd_de.getGenericName( ),
-                         xgd_de.getNoDisplay( ),
-                         xgd_de.getHidden( ),
-                         xgd_de.getOnlyShowIn( ),
-                         xgd_de.getNotShowIn( ),
-                         xgd_de.getCategories( ),
-                         app_path
-                     )
-                     # this will be debug in future
-                     #self._print_app(self.app_entry)
-                     # will call to fill in orm database future
+                  
+                    app_path = root + "/" + name
+                    
+                    # setup desktop entry to access its elements                    
+                    xgd_de = DesktopEntry(app_path)
+                    
+                    #                    
+                    self.app_entry = Desktop_Entry(
+                        name,
+                        xgd_de.getName( ),
+                        xgd_de.getGenericName( ),
+                        xgd_de.getNoDisplay( ),
+                        xgd_de.getHidden( ),
+                        xgd_de.getOnlyShowIn( ),
+                        xgd_de.getNotShowIn( ),
+                        xgd_de.getCategories( ),
+                        app_path,
+                        user,
+                        False
+                    )   
+                     
+                    self._add_entry(self.app_entry)                        
+
 
     # ************** Create Application DB **************
     #
@@ -73,18 +90,16 @@ class AppList( ):
         """Add app entry to database"""
 
         # create new - models.py 
-        cat_record = models.Categories(de_name=app_entry.de_name) 
+        app_record = models.DesktopApps(de_file=app_entry.de_file) 
 
         # fill in values  
         app_record.fill_record(app_entry) 
 
-        #logger.debug("App: Created app record.")        
-        
         # add/commit to local database
-        self.session.add(app_record)
+        BaseInfo.session.add(app_record)
 
         try:
-            self.session.commit()
+            BaseInfo.session.commit( )
         except exc.SQLAlchemyError:
             logger.error("Commit error")
 
