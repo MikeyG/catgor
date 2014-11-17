@@ -85,8 +85,8 @@ class DesktopApps(Base):
     de_file = Column(String)   
     de_name = Column(String)
     de_gname = Column(String)
-    de_nodisp = Column(Boolean)
-    de_hidden = Column(Boolean)
+#    de_nodisp = Column(Boolean)
+#    de_hidden = Column(Boolean)
     de_onlyshow = Column(String)
     de_notshow = Column(String)
     de_cat = Column(String)
@@ -99,8 +99,8 @@ class DesktopApps(Base):
 
         self.de_name = app_entry.de_name
         self.de_gname = app_entry.de_gname
-        self.de_nodisp = app_entry.de_nodisp
-        self.de_hidden = app_entry.de_hidden
+#        self.de_nodisp = app_entry.de_nodisp
+#        self.de_hidden = app_entry.de_hidden
         
 
 #        for onlyshow in app_entry.de_onlyshow:

@@ -81,7 +81,9 @@ class AppList( ):
                         False
                     )   
                      
-                    self._add_entry(self.app_entry)                        
+                    # Just as a note, skip no display or hidden .desktop                    
+                    if not (self.app_entry.de_nodisp or self.app_entry.de_hidden):
+                        self._add_entry(self.app_entry)                        
 
 
     # ************** Create Application DB **************
