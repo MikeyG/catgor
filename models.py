@@ -14,6 +14,7 @@ Base = declarative_base()
 # engine = create_engine('sqlite:///%s' % db_path)
 # in tools.py
 
+
 # *************************************************************
 # Categories ORM class to save category specific data to the database
 #
@@ -24,7 +25,6 @@ Base = declarative_base()
 #   apps -
 #   categories -
 #   excluded_apps -
-
 
 class Categories(Base):
     __tablename__ = 'categories'
@@ -54,21 +54,24 @@ class Categories(Base):
         # stub
         for tmp in cat_entry.apps:
             try:
+                # search for .desktop in DesktopApps
                 catsearch = BaseInfo.session.query(
                     DesktopApps).filter(DesktopApps.de_file == tmp).one()
-                
-                # found entry
-                print "found it"
             
             # not in database, so add it
             except NoResultFound:
-                print "Nope"
+                catsearch = DesktopApps(de_file=tmp,de_orphan=True)
+                BaseInfo.session.add(catsearch)
             
             # multi entries if a system and user .desktop are
             # present - user takes priority
             except MultipleResultsFound:
-                print tmp
-
+                catsearch = BaseInfo.session.query(
+                    DesktopApps).filter(and_(DesktopApps.de_file==tmp,DesktopApps.de_user==True))
+            
+            finally:
+                self.apps.append(catsearch)
+                
         # stub        
         if str(cat_entry.categories)[:3] == "@as":
             self.categories = ""
@@ -81,9 +84,6 @@ class Categories(Base):
         else:
             self.excluded_apps = str(cat_entry.excluded_apps)
 
-    def _create_orphan(self, cat_entry):
-        pass
-       
 
 # *************************************************************
 # Desktop_Apps ORM class to save application specific data to the database
