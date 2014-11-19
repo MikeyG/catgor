@@ -56,9 +56,16 @@ class Categories(Base):
             try:
                 catsearch = BaseInfo.session.query(
                     DesktopApps).filter(DesktopApps.de_file == tmp).one()
+                
+                # found entry
                 print "found it"
+            
+            # not in database, so add it
             except NoResultFound:
                 print "Nope"
+            
+            # multi entries if a system and user .desktop are
+            # present - user takes priority
             except MultipleResultsFound:
                 print tmp
 
