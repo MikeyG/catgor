@@ -1,5 +1,9 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Table, Column, ForeignKey, Integer, String, Boolean
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+
+from base import BaseInfo
 
 # The declarative_base() callable returns a new base class from 
 # which all mapped classes should inherit. When the class definition is 
@@ -28,28 +32,43 @@ class Categories(Base):
     category = Column(String)
     name = Column(String)
     translate = Column(Boolean)
-    apps = Column(String)
+    apps = relationship(
+        'DesktopApps', 
+        secondary= 'cattoapp'
+    )
     categories = Column(String)
     excluded_apps = Column(String)
 
     def fill_record(self, cat_entry):
         """Fill category data"""
 
+        # clean up the category name        
         self.name = cat_entry.name[0:]
 
+        # Not used right now, but save anyway
         if cat_entry.translate:
             self.translate = True
         else:
             self.translate = False   
-             
-#        for app_entry in cat_entry.apps:
-#            print app_entry
+    
+        # stub
+        for tmp in cat_entry.apps:
+            try:
+                catsearch = BaseInfo.session.query(
+                    DesktopApps).filter(DesktopApps.de_file == tmp).one()
+                print "found it"
+            except NoResultFound:
+                print "Nope"
+            except MultipleResultsFound:
+                print tmp
 
+        # stub        
         if str(cat_entry.categories)[:3] == "@as":
             self.categories = ""
         else:
             self.categories = str(cat_entry.categories)
 
+        # stub
         if str(cat_entry.excluded_apps)[:3] == "@as":
             self.excluded_apps = ""
         else:
@@ -91,6 +110,10 @@ class DesktopApps(Base):
     de_notshow = Column(String)
     de_cat = Column(String)
     de_path = Column(String)
+    de_gnome_cats = relationship(
+        'Categories', 
+        secondary= 'cattoapp'
+    )
     de_user = Column(Boolean)
     de_orphan = Column(Boolean)
 
@@ -99,9 +122,17 @@ class DesktopApps(Base):
 
         self.de_name = app_entry.de_name
         self.de_gname = app_entry.de_gname
-#        self.de_nodisp = app_entry.de_nodisp
-#        self.de_hidden = app_entry.de_hidden
-        
+
+        # stub
+        for tmp in app_entry.de_onlyshow:
+            try:
+                onlyshow = BaseInfo.session.query(
+                    DisplayManager).filter(DisplayManager.dm_name == tmp).one()
+                print "found it"
+            except NoResultFound:
+                print "Nope"
+            except MultipleResultsFound:
+                print tmp        
 
 #        for onlyshow in app_entry.de_onlyshow:
 #           session.query(Tag).filter(
@@ -125,5 +156,22 @@ class DisplayManager(Base):
     dm_name = Column(String)    
     
     
+# *************************************************************
+# Association tables
+
+class CatToDesktop (Base):
+    __tablename__ = 'cattoapp'
+    category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
+    desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True) 
+    
+class OnlyshowToDM (Base):
+    __tablename__ = 'onlyshow'
+    dispman_id = Column(Integer, ForeignKey('dispman.id'), primary_key=True)
+    desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
+
+class NoshowToDM (Base):
+    __tablename__ = 'noshow'
+    dispman_id = Column(Integer, ForeignKey('dispman.id'), primary_key=True)
+    desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
     
     
