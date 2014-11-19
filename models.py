@@ -62,13 +62,14 @@ class Categories(Base):
             except NoResultFound:
                 catsearch = DesktopApps(de_file=tmp,de_orphan=True)
                 BaseInfo.session.add(catsearch)
+                BaseInfo.session.commit()
             
             # multi entries if a system and user .desktop are
             # present - user takes priority
             except MultipleResultsFound:
                 catsearch = BaseInfo.session.query(
                     DesktopApps).filter(and_(DesktopApps.de_file==tmp,DesktopApps.de_user==True))
-            
+                
             finally:
                 self.apps.append(catsearch)
                 
