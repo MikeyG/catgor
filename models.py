@@ -130,13 +130,19 @@ class DesktopApps(Base):
         self.de_user = app_entry.de_user
         self.de_orphan = app_entry.de_orphan
 
+# ************************************************************
+# Table to hold category names from both overview categories
+# and .desktop categories
 
 class CategoryList(Base):
     __tablename__ = 'catlist'
     id = Column(Integer, primary_key=True)
     cat_name = Column(String) 
+ 
     
-    
+# ************************************************************
+# Table to hold .desktop display manager names
+
 class DisplayManager(Base):
     __tablename__ = 'dispman'
     id = Column(Integer, primary_key=True)
@@ -144,7 +150,13 @@ class DisplayManager(Base):
     
     
 # *************************************************************
-# Association tables
+# Association tables:
+#   - CatToDesktop - overview groups (category) to .desktop (apps) 
+#       which are already assigned
+#
+#   - DesktopToCat - .desktop (app) assigned categories
+#
+#   - 
 
 class CatToDesktop (Base):
     __tablename__ = 'cattoapp'
