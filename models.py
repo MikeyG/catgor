@@ -51,10 +51,14 @@ class Categories(Base):
             self.translate = True
         else:
             self.translate = False   
-    
 
+        # handle categories apps    
+        for tmp in cat_entry.apps:
+            catapp = BaseInfo.sesson.query(
+                DesktopApps).filter(DesktopApps.de_file==tmp).one()
+            self.apps.append(catapp)
                 
-        # stub        
+        #         
         if str(cat_entry.categories)[:3] == "@as":
             self.categories = ""
         else:
