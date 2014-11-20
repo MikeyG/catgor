@@ -91,6 +91,13 @@ class AppList( ):
     def _add_entry(self, app_entry):
         """Add app entry to database"""
 
+        # run through and categories to database
+        models.cat_list(app_entry.de_cat)
+        
+        # add display managers to database
+        models.dm_list(app_entry.de_onlyshow)
+        models.dm_list(app_entry.de_notshow)
+                
         # create new - models.py 
         app_record = models.DesktopApps(de_file=app_entry.de_file) 
 

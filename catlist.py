@@ -82,6 +82,10 @@ class GetCats( ):
             cat_data.get_value('categories'),
             cat_data.get_value('excluded-apps')
         )
+
+        # if no categories then empty field
+        if str(self.cat_entry.categories)[:3] == "@as":
+            self.cat_entry.categories = ""
         
         self._add_entry(self.cat_entry)      
 
@@ -91,11 +95,12 @@ class GetCats( ):
     def _add_entry(self, cat_entry):
         """Add cat entry to database"""
 
-#        logger.debug('	Name: %s' % cat_entry.name)
-#        logger.debug('	Translate: %s' % cat_entry.translate)
-#        logger.debug('Apps: %s' % cat_entry.apps)
-#        logger.debug('Categories: %s' %  cat_entry.categories)      
-#        logger.debug('Excluded-apps: %s' % cat_entry.excluded_apps)
+        # run through category apps and add orphans to Desktop
+        # database, add DM and categories to database
+        models.cat_apps(cat_entry)
+
+        # run through and categories to database
+        models.cat_list(cat_entry.categories)
 
         # create new - models.py 
         cat_record = models.Categories(category=cat_entry.category) 

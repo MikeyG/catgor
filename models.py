@@ -1,9 +1,10 @@
-from sqlalchemy import Table, Column, ForeignKey, Integer, String, Boolean
+from sqlalchemy import Table, Column, ForeignKey, Integer, String, Boolean, and_
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from base import BaseInfo
+
 
 # The declarative_base() callable returns a new base class from 
 # which all mapped classes should inherit. When the class definition is 
@@ -51,27 +52,7 @@ class Categories(Base):
         else:
             self.translate = False   
     
-        # stub
-        for tmp in cat_entry.apps:
-            try:
-                # search for .desktop in DesktopApps
-                catsearch = BaseInfo.session.query(
-                    DesktopApps).filter(DesktopApps.de_file == tmp).one()
-            
-            # not in database, so add it
-            except NoResultFound:
-                catsearch = DesktopApps(de_file=tmp,de_orphan=True)
-                BaseInfo.session.add(catsearch)
-                BaseInfo.session.commit()
-            
-            # multi entries if a system and user .desktop are
-            # present - user takes priority
-            except MultipleResultsFound:
-                catsearch = BaseInfo.session.query(
-                    DesktopApps).filter(and_(DesktopApps.de_file==tmp,DesktopApps.de_user==True))
-                
-            finally:
-                self.apps.append(catsearch)
+
                 
         # stub        
         if str(cat_entry.categories)[:3] == "@as":
@@ -138,18 +119,9 @@ class DesktopApps(Base):
                     DisplayManager).filter(DisplayManager.dm_name == tmp).one()
                 print "found it"
             except NoResultFound:
-                print "Nope"
+                pass
             except MultipleResultsFound:
                 print tmp        
-
-#        for onlyshow in app_entry.de_onlyshow:
-#           session.query(Tag).filter(
-#                Tag.guid.in_(note.tagGuids),
-#            ).all()
-
-#        print self.de_onlyshow
-
-
 
 #        self.de_onlyshow = app_entry.de_onlyshow
 #        self.de_notshow = app_entry.de_notshow
@@ -158,6 +130,13 @@ class DesktopApps(Base):
         self.de_user = app_entry.de_user
         self.de_orphan = app_entry.de_orphan
 
+
+class CategoryList(Base):
+    __tablename__ = 'catlist'
+    id = Column(Integer, primary_key=True)
+    cat_name = Column(String) 
+    
+    
 class DisplayManager(Base):
     __tablename__ = 'dispman'
     id = Column(Integer, primary_key=True)
@@ -182,4 +161,68 @@ class NoshowToDM (Base):
     dispman_id = Column(Integer, ForeignKey('dispman.id'), primary_key=True)
     desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
     
+
+#*************************************************************
+#  Add the current category .desktop apps to DesktopApps
+# 
     
+def cat_apps(cat_entry):
+    """Fill application data"""        
+
+    # Add Category .desktop entries to DesktopApps
+    for tmp in cat_entry.apps:
+        try:
+            # search for .desktop in DesktopApps
+            catsearch = BaseInfo.session.query(
+                DesktopApps).filter(DesktopApps.de_file == tmp).one()
+            
+        # not in database, so add it as an orphan
+        except NoResultFound:
+            catsearch = DesktopApps(de_file=tmp,de_orphan=True)
+            BaseInfo.session.add(catsearch)
+            BaseInfo.session.commit()
+            
+        # multi entries if a system and user .desktop are
+        # present 
+        except MultipleResultsFound:
+            # do nothing, sort it out later            
+            pass
+
+#*************************************************************
+#  Add the current category .desktop apps to DesktopApps
+# 
+
+def cat_list(cat_list):
+    """Fill category list """ 
+    
+    for tmp in cat_list:
+        try:
+            # search for categories in DesktopApps
+            catlist = BaseInfo.session.query(
+                CategoryList).filter(CategoryList.cat_name == tmp).one()
+            
+        # not in database, so add it 
+        except NoResultFound:
+            catlist = CategoryList(cat_name=tmp)
+            BaseInfo.session.add(catlist)
+            BaseInfo.session.commit()
+
+#*************************************************************
+#  Add the current category .desktop apps to DesktopApps
+# 
+                
+def dm_list(dm_entry):
+    """Fill display manager list """ 
+    
+    for tmp in dm_entry:
+        try:
+            # search for dm in DisplayManager
+            dmlist = BaseInfo.session.query(
+                DisplayManager).filter(DisplayManager.dm_name == tmp).one()
+            
+        # not in database, so add it 
+        except NoResultFound:
+            dmlist = DisplayManager(dm_name=tmp)
+            BaseInfo.session.add(dmlist)
+            BaseInfo.session.commit()             
+                
