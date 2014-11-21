@@ -35,15 +35,15 @@ class Categories(Base):
     translate = Column(Boolean)
     apps = relationship(
         'DesktopApps', 
-        secondary= 'cattoapp'
+        secondary= 'cat_app'
     )
     categories = relationship(
         'CategoryList', 
-        secondary= 'cattocats'
+        secondary= 'cat_include'
     )    
     excluded_apps = relationship(
         'DesktopApps', 
-        secondary= 'cattoexclude'
+        secondary= 'cat_exclude'
     )
 
 
@@ -134,7 +134,7 @@ class DesktopApps(Base):
     )
     de_cat = relationship(
         'CategoryList', 
-        secondary= 'apptocats'
+        secondary= 'app_cats'
     )
     de_path = Column(String)
     de_user = Column(Boolean)
@@ -169,7 +169,7 @@ class DesktopApps(Base):
 # and .desktop categories
 
 class CategoryList(Base):
-    __tablename__ = 'catlist'
+    __tablename__ = 'categorylist'
     id = Column(Integer, primary_key=True)
     cat_name = Column(String) 
  
@@ -194,36 +194,36 @@ class DisplayManager(Base):
 
 # association table category apps to include
 class CatToDesktop (Base):
-    __tablename__ = 'cattoapp'
+    __tablename__ = 'cat_app'
     category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
     desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True) 
 
 # association table category categories to include
-class CatToCats (Base):
-    __tablename__ = 'cattocats'
+class CatToInclude (Base):
+    __tablename__ = 'cat_include'
     category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
     desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True) 
 
 # association table category excluded apps
 class CatToExclude (Base):
-    __tablename__ = 'cattoexclude'
+    __tablename__ = 'cat_exclude'
     category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
     desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True) 
 
-class AppsToCats (Base):
-    __tablename__ = 'apptocats'
-    desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
-    category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
+class AppToCats (Base):
+    __tablename__ = 'app_cats'
+    desktop_id  = Column(Integer, ForeignKey('dispman.id'), primary_key=True)
+    category_id = Column(Integer, ForeignKey('catlist.id'), primary_key=True)
         
 class OnlyshowToDM (Base):
     __tablename__ = 'onlyshow'
-    dispman_id = Column(Integer, ForeignKey('dispman.id'), primary_key=True)
-    desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
+    desktop_id = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
+    dispman_id  = Column(Integer, ForeignKey('dispman.id'), primary_key=True)
 
 class NoshowToDM (Base):
     __tablename__ = 'noshow'
-    dispman_id = Column(Integer, ForeignKey('dispman.id'), primary_key=True)
-    desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
+    desktop_id = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
+    dispman_id  = Column(Integer, ForeignKey('dispman.id'), primary_key=True)
     
 
 #*************************************************************
