@@ -37,8 +37,15 @@ class Categories(Base):
         'DesktopApps', 
         secondary= 'cattoapp'
     )
-    categories = Column(String)
-    excluded_apps = Column(String)
+    categories = relationship(
+        'CategoryList', 
+        secondary= 'cattocats'
+    )    
+    excluded_apps = relationship(
+        'DesktopApps', 
+        secondary= 'cattoexclude'
+    )
+
 
     def fill_record(self, cat_entry):
         """Fill category data"""
@@ -54,21 +61,39 @@ class Categories(Base):
 
         # handle categories apps    
         for tmp in cat_entry.apps:
-            catapp = BaseInfo.sesson.query(
-                DesktopApps).filter(DesktopApps.de_file==tmp).one()
+            # search for .desktop app, all apps should be in  DesktopApps
+            # by this point	
+            try:
+                catapp = BaseInfo.session.query(
+                    DesktopApps).filter(DesktopApps.de_file==tmp).one()
+                        
+            # we get here because an app (.desktop) exists in system and
+            # user directory, so query again and get user .desktop            
+            except MultipleResultsFound:
+                catapp = BaseInfo.session.query(
+                    DesktopApps).filter(and_(DesktopApps.de_file==tmp,
+                        DesktopApps.de_user==True)).one()                        
+            
+            # add to to table via association table CatToDesktop
             self.apps.append(catapp)
-                
-        #         
-        if str(cat_entry.categories)[:3] == "@as":
-            self.categories = ""
-        else:
-            self.categories = str(cat_entry.categories)
 
-        # stub
-        if str(cat_entry.excluded_apps)[:3] == "@as":
-            self.excluded_apps = ""
-        else:
-            self.excluded_apps = str(cat_entry.excluded_apps)
+        # handle categories in each category    
+        for tmp in cat_entry.categories:
+            # search 	
+            catcats = BaseInfo.session.query(
+                CategoryList).filter(CategoryList.cat_name==tmp).one()
+            
+            # add to to table via association table CatToCats
+            self.apps.append(catcats)
+                
+        # handle excluded apps in each category    
+        for tmp in cat_entry.excluded_apps:
+            # search 	
+            exapps = BaseInfo.session.query(
+                DesktopApps).filter(DesktopApps.de_file==tmp).one()
+            
+            # add to to table via association table CatToExclude
+            self.apps.append(exapps)
 
 
 # *************************************************************
@@ -99,14 +124,19 @@ class DesktopApps(Base):
     de_gname = Column(String)
 #    de_nodisp = Column(Boolean)
 #    de_hidden = Column(Boolean)
-    de_onlyshow = Column(String)
-    de_notshow = Column(String)
-    de_cat = Column(String)
-    de_path = Column(String)
-    de_gnome_cats = relationship(
-        'Categories', 
-        secondary= 'cattoapp'
+    de_onlyshow = relationship(
+        'DisplayManager', 
+        secondary= 'onlyshow'
     )
+    de_notshow = relationship(
+        'DisplayManager', 
+        secondary= 'noshow'
+    )
+    de_cat = relationship(
+        'CategoryList', 
+        secondary= 'apptocats'
+    )
+    de_path = Column(String)
     de_user = Column(Boolean)
     de_orphan = Column(Boolean)
 
@@ -123,9 +153,9 @@ class DesktopApps(Base):
                     DisplayManager).filter(DisplayManager.dm_name == tmp).one()
                 print "found it"
             except NoResultFound:
-                pass
+                print "nope"
             except MultipleResultsFound:
-                print tmp        
+                print "double nope"        
 
 #        self.de_onlyshow = app_entry.de_onlyshow
 #        self.de_notshow = app_entry.de_notshow
@@ -162,11 +192,29 @@ class DisplayManager(Base):
 #
 #   - 
 
+# association table category apps to include
 class CatToDesktop (Base):
     __tablename__ = 'cattoapp'
     category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
     desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True) 
-    
+
+# association table category categories to include
+class CatToCats (Base):
+    __tablename__ = 'cattocats'
+    category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
+    desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True) 
+
+# association table category excluded apps
+class CatToExclude (Base):
+    __tablename__ = 'cattoexclude'
+    category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
+    desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True) 
+
+class AppsToCats (Base):
+    __tablename__ = 'apptocats'
+    desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
+    category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
+        
 class OnlyshowToDM (Base):
     __tablename__ = 'onlyshow'
     dispman_id = Column(Integer, ForeignKey('dispman.id'), primary_key=True)
@@ -181,7 +229,6 @@ class NoshowToDM (Base):
 #*************************************************************
 #  Add the current category .desktop apps to DesktopApps
 # 
-    
 def cat_apps(cat_entry):
     """Fill application data"""        
 
@@ -205,22 +252,21 @@ def cat_apps(cat_entry):
             pass
 
 #*************************************************************
-#  Add the current category .desktop apps to DesktopApps
+#  Add the current category .desktop apps to CategoryList
 # 
-
 def cat_list(cat_list):
     """Fill category list """ 
-    
+
     for tmp in cat_list:
+       
         try:
             # search for categories in DesktopApps
-            catlist = BaseInfo.session.query(
-                CategoryList).filter(CategoryList.cat_name == tmp).one()
+            listcats = BaseInfo.session.query(CategoryList).filter(CategoryList.cat_name == tmp).one()
             
         # not in database, so add it 
         except NoResultFound:
-            catlist = CategoryList(cat_name=tmp)
-            BaseInfo.session.add(catlist)
+            listcats = CategoryList(cat_name=tmp)
+            BaseInfo.session.add(listcats)
             BaseInfo.session.commit()
 
 #*************************************************************

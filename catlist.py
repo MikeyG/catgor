@@ -86,6 +86,10 @@ class GetCats( ):
         # if no categories then empty field
         if str(self.cat_entry.categories)[:3] == "@as":
             self.cat_entry.categories = ""
+            
+        # if no excluded then empty field
+        if str(self.cat_entry.excluded_apps)[:3] == "@as":
+            self.cat_entry.excluded_apps = "" 
         
         self._add_entry(self.cat_entry)      
 
