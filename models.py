@@ -5,6 +5,9 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from base import BaseInfo
 
+# python built-in logging 
+import logging
+logger = logging.getLogger('catgor')
 
 # The declarative_base() callable returns a new base class from 
 # which all mapped classes should inherit. When the class definition is 
@@ -33,19 +36,9 @@ class Categories(Base):
     category = Column(String)
     name = Column(String)
     translate = Column(Boolean)
-    apps = relationship(
-        'DesktopApps', 
-        secondary= 'cat_app'
-    )
-    categories = relationship(
-        'CategoryList', 
-        secondary= 'cat_include'
-    )    
-    excluded_apps = relationship(
-        'DesktopApps', 
-        secondary= 'cat_exclude'
-    )
-
+    apps = Column(String)
+    categories = Column(String)   
+    excluded_apps = Column(String)
 
     def fill_record(self, cat_entry):
         """Fill category data"""
@@ -75,7 +68,7 @@ class Categories(Base):
                         DesktopApps.de_user==True)).one()                        
             
             # add to to table via association table CatToDesktop
-            self.apps.append(catapp)
+            #self.apps.append(catapp)
 
         # handle categories in each category    
         for tmp in cat_entry.categories:
@@ -124,18 +117,9 @@ class DesktopApps(Base):
     de_gname = Column(String)
 #    de_nodisp = Column(Boolean)
 #    de_hidden = Column(Boolean)
-    de_onlyshow = relationship(
-        'DisplayManager', 
-        secondary= 'onlyshow'
-    )
-    de_notshow = relationship(
-        'DisplayManager', 
-        secondary= 'noshow'
-    )
-    de_cat = relationship(
-        'CategoryList', 
-        secondary= 'app_cats'
-    )
+    de_onlyshow = relationship('DisplayManager', secondary='onlyshow')
+    de_notshow = relationship('DisplayManager', secondary='noshow')
+    de_cat = relationship('CategoryList', secondary='apptocats')
     de_path = Column(String)
     de_user = Column(Boolean)
     de_orphan = Column(Boolean)
@@ -149,17 +133,36 @@ class DesktopApps(Base):
         # stub
         for tmp in app_entry.de_onlyshow:
             try:
-                onlyshow = BaseInfo.session.query(
+                onlyshowrow = BaseInfo.session.query(
                     DisplayManager).filter(DisplayManager.dm_name == tmp).one()
-                print "found it"
+                self.de_onlyshow.append(onlyshowrow)                    
             except NoResultFound:
-                print "nope"
+                logger.debug("DesktopApps - fill_record - onlyshow - NoResultFound")
             except MultipleResultsFound:
-                print "double nope"        
+                logger.debug("DesktopApps - fill_record - onlyshow - MultipleResultsFound")        
 
-#        self.de_onlyshow = app_entry.de_onlyshow
-#        self.de_notshow = app_entry.de_notshow
-#        self.de_cat = app_entry.de_cat
+        # stub
+        for tmp in app_entry.de_notshow:
+            try:
+                notshowrow = BaseInfo.session.query(
+                    DisplayManager).filter(DisplayManager.dm_name == tmp).one()
+                self.de_notshow.append(notshowrow)                    
+            except NoResultFound:
+                logger.debug("DesktopApps - fill_record - notshow - NoResultFound")
+            except MultipleResultsFound:
+                logger.debug("DesktopApps - fill_record - notshow - MultipleResultsFound")      
+
+        # stub
+#        for tmp in app_entry.de_cat:
+#            try:
+#                appcategories = BaseInfo.session.query(
+#                    DisplayManager).filter(CategoryList.cat_name == tmp).one()
+#                self.de_cat.append(appcategories)                    
+#            except NoResultFound:
+#                logger.debug("DesktopApps - fill_record - cats - NoResultFound")
+#            except MultipleResultsFound:
+#                logger.debug("DesktopApps - fill_record - cats - MultipleResultsFound")   
+
         self.de_path = app_entry.de_path 
         self.de_user = app_entry.de_user
         self.de_orphan = app_entry.de_orphan
@@ -171,50 +174,28 @@ class DesktopApps(Base):
 class CategoryList(Base):
     __tablename__ = 'categorylist'
     id = Column(Integer, primary_key=True)
+    dk_cat = relationship('DesktopApps', secondary='apptocats')
     cat_name = Column(String) 
- 
+
+# Category list association tables
+class AppToCats (Base):
+    __tablename__ = 'apptocats'
+    desktop_id = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
+    category_id = Column(Integer, ForeignKey('categorylist.id'), primary_key=True) 
     
 # ************************************************************
-# Table to hold .desktop display manager names
+#    Display Manager
+#
+# Table to hold .desktop display manager names. 
 
 class DisplayManager(Base):
     __tablename__ = 'dispman'
     id = Column(Integer, primary_key=True)
+    only_show = relationship('DesktopApps', secondary='onlyshow')
+    no_show = relationship('DesktopApps', secondary='noshow')
     dm_name = Column(String)    
-    
-    
-# *************************************************************
-# Association tables:
-#   - CatToDesktop - overview groups (category) to .desktop (apps) 
-#       which are already assigned
-#
-#   - DesktopToCat - .desktop (app) assigned categories
-#
-#   - 
 
-# association table category apps to include
-class CatToDesktop (Base):
-    __tablename__ = 'cat_app'
-    category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
-    desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True) 
-
-# association table category categories to include
-class CatToInclude (Base):
-    __tablename__ = 'cat_include'
-    category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
-    desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True) 
-
-# association table category excluded apps
-class CatToExclude (Base):
-    __tablename__ = 'cat_exclude'
-    category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
-    desktop_id  = Column(Integer, ForeignKey('desktop.id'), primary_key=True) 
-
-class AppToCats (Base):
-    __tablename__ = 'app_cats'
-    desktop_id  = Column(Integer, ForeignKey('dispman.id'), primary_key=True)
-    category_id = Column(Integer, ForeignKey('catlist.id'), primary_key=True)
-        
+# Display manager association tables
 class OnlyshowToDM (Base):
     __tablename__ = 'onlyshow'
     desktop_id = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
@@ -224,8 +205,8 @@ class NoshowToDM (Base):
     __tablename__ = 'noshow'
     desktop_id = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
     dispman_id  = Column(Integer, ForeignKey('dispman.id'), primary_key=True)
-    
 
+    
 #*************************************************************
 #  Add the current category .desktop apps to DesktopApps
 # 
