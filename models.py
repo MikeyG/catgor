@@ -36,7 +36,8 @@ class Categories(Base):
     category = Column(String)
     name = Column(String)
     translate = Column(Boolean)
-    apps = Column(String)
+#    apps = Column(String)
+    apps = relationship('CategoryList', secondary='cattoapps')    
     categories = Column(String)   
     excluded_apps = Column(String)
 
@@ -119,7 +120,7 @@ class DesktopApps(Base):
 #    de_hidden = Column(Boolean)
     de_onlyshow = relationship('DisplayManager', secondary='onlyshow')
     de_notshow = relationship('DisplayManager', secondary='noshow')
-    de_cat = relationship('CategoryList', secondary='apptocats')
+    de_cat = relationship('CategoryList', secondary='desktocats')
     de_path = Column(String)
     de_user = Column(Boolean)
     de_orphan = Column(Boolean)
@@ -130,7 +131,8 @@ class DesktopApps(Base):
         self.de_name = app_entry.de_name
         self.de_gname = app_entry.de_gname
 
-        # stub
+        # Associate only show in XXXX display manager. Example, only show 
+        # .desktop entry in Gnome
         for tmp in app_entry.de_onlyshow:
             try:
                 onlyshowrow = BaseInfo.session.query(
@@ -141,7 +143,8 @@ class DesktopApps(Base):
             except MultipleResultsFound:
                 logger.debug("DesktopApps - fill_record - onlyshow - MultipleResultsFound")        
 
-        # stub
+        # Associate do not show in XXXX display manager. Example, do not show 
+        # .desktop entry in Gnome
         for tmp in app_entry.de_notshow:
             try:
                 notshowrow = BaseInfo.session.query(
@@ -152,16 +155,16 @@ class DesktopApps(Base):
             except MultipleResultsFound:
                 logger.debug("DesktopApps - fill_record - notshow - MultipleResultsFound")      
 
-        # stub
-#        for tmp in app_entry.de_cat:
-#            try:
-#                appcategories = BaseInfo.session.query(
-#                    DisplayManager).filter(CategoryList.cat_name == tmp).one()
-#                self.de_cat.append(appcategories)                    
-#            except NoResultFound:
-#                logger.debug("DesktopApps - fill_record - cats - NoResultFound")
-#            except MultipleResultsFound:
-#                logger.debug("DesktopApps - fill_record - cats - MultipleResultsFound")   
+        # Associate .desktop with its categories, note - provide by the application
+        for tmp in app_entry.de_cat:
+            try:
+                appcategories = BaseInfo.session.query(
+                    CategoryList).filter(CategoryList.cat_name == tmp).one()
+                self.de_cat.append(appcategories)                    
+            except NoResultFound:
+                logger.debug("DesktopApps - fill_record - cats - NoResultFound")
+            except MultipleResultsFound:
+                logger.debug("DesktopApps - fill_record - cats - MultipleResultsFound")   
 
         self.de_path = app_entry.de_path 
         self.de_user = app_entry.de_user
@@ -174,12 +177,18 @@ class DesktopApps(Base):
 class CategoryList(Base):
     __tablename__ = 'categorylist'
     id = Column(Integer, primary_key=True)
-    dk_cat = relationship('DesktopApps', secondary='apptocats')
+    gnome_cat = relationship('Categories', secondary='cattoapps')
+    dk_cat = relationship('DesktopApps', secondary='desktocats')
     cat_name = Column(String) 
 
 # Category list association tables
-class AppToCats (Base):
-    __tablename__ = 'apptocats'
+class CatApps (Base):
+    __tablename__ = 'cattoapps'
+    desktop_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
+    category_id = Column(Integer, ForeignKey('categorylist.id'), primary_key=True) 
+
+class DeskCats (Base):
+    __tablename__ = 'desktocats'
     desktop_id = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
     category_id = Column(Integer, ForeignKey('categorylist.id'), primary_key=True) 
     
