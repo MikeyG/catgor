@@ -92,6 +92,13 @@ class GetCats( ):
         # if no excluded then empty field
         if str(self.cat_entry.excluded_apps)[:3] == "@as":
             self.cat_entry.excluded_apps = "" 
+
+        # run through and add categories to database
+        if self.cat_entry.categories:
+            models.cat_list(self.cat_entry.categories)
+
+        if self.cat_entry.excluded_apps:
+            logger.debug("excluded apps - fix me")
         
         self._add_entry(self.cat_entry)      
 

@@ -9,6 +9,13 @@ from base import BaseInfo
 import logging
 logger = logging.getLogger('catgor')
 
+"""
+The classes ... blah TBD words
+
+
+"""
+
+
 # The declarative_base() callable returns a new base class from 
 # which all mapped classes should inherit. When the class definition is 
 # completed, a new Table and mapper() will have been generated.
@@ -25,12 +32,12 @@ Base = declarative_base()
 # https://developer.gnome.org/menu-spec/
 #
 # Struct: Categories
-#   category - 
-#   name -  
-#   translate - 
-#   apps -
-#   categories -
-#   excluded_apps -
+#   category - Gnome category
+#   name - Name of category
+#   translate - sure .. I do not use
+#   apps - desktop entries included by filename (i.e. app.desktop)
+#   categories - desktop entry categories to include
+#   excluded_apps - desktop entries excluded by filename (i.e. app.desktop)
 
 class Categories(Base):
     __tablename__ = 'categories'
@@ -40,7 +47,7 @@ class Categories(Base):
     translate = Column(Boolean)
     apps = relationship('DesktopApps', secondary='cattodesktop')    
     categories = relationship('CategoryList', secondary='cattoapps')   
-    excluded_apps = Column(String)
+    excluded_apps = relationship('DesktopApps', secondary='excludedtodesktop')
 
     def fill_record(self, cat_entry):
         """Fill category data"""
@@ -54,41 +61,51 @@ class Categories(Base):
         else:
             self.translate = False   
 
-        # handle categories apps    
+        # handle categories apps
         for tmp in cat_entry.apps:
             # search for .desktop app, all apps should be in  DesktopApps
             # by this point	
             try:
                 catasignedapps = BaseInfo.session.query(
                     DesktopApps).filter(DesktopApps.de_file==tmp).one()
-                        
             # we get here because an app (.desktop) exists in system and
             # user directory, so query again and get user .desktop            
             except MultipleResultsFound:
                 catasignedapps = BaseInfo.session.query(
                     DesktopApps).filter(and_(DesktopApps.de_file==tmp,
-                        DesktopApps.de_user==True)).one()                        
-            
+                        DesktopApps.de_user==True)).one() 
             # add to to table via association table CatToDesktop
             self.apps.append(catasignedapps)
 
-        # handle categories to include in each category    
+        # handle categories to include in each category     
         for tmp in cat_entry.categories:
-            # search 	
-            catcats = BaseInfo.session.query(
-                CategoryList).filter(CategoryList.cat_name==tmp).one()
-            
-            # add to to table via association table CatToCats
-            self.apps.append(catcats)
+            # search for .desktop app, all apps should be in  DesktopApps
+            # by this point	
+            try:
+                decategories = BaseInfo.session.query(
+                    CategoryList).filter(CategoryList.cat_name==tmp).one()
+            # we get here because an app (.desktop) exists in system and
+            # user directory, so query again and get user .desktop            
+            except NoResultFound:
+                logger.debug("Categories list categories error.")
+            # add to to table via association table 
+            self.categories.append(decategories)
                 
         # handle excluded apps in each category    
         for tmp in cat_entry.excluded_apps:
             # search 	
             exapps = BaseInfo.session.query(
                 DesktopApps).filter(DesktopApps.de_file==tmp).one()
-            
+ 
+        for tmp in cat_entry.excluded_apps:
+            # search for .desktop app, apps should be excluded
+            try:
+                exapps = BaseInfo.session.query(
+                    DesktopApps).filter(DesktopApps.de_file==tmp).one()
+            except NoResultFound:
+                logger.debug("Apps excluded error.")
             # add to to table via association table CatToExclude
-            self.apps.append(exapps)
+            self.excluded_apps.append(exapps)
 
 # Category list association tables
 class GcatDesktop (Base):
@@ -96,6 +113,12 @@ class GcatDesktop (Base):
     category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True) 
     desktop_id = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
 
+# Category list association tables
+class ExcludedDesktop (Base):
+    __tablename__ = 'excludedtodesktop'
+    category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True) 
+    desktop_id = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
+    
 
 # *************************************************************
 # Desktop_Apps ORM class to save application specific data to the database
@@ -131,6 +154,7 @@ class DesktopApps(Base):
     de_user = Column(Boolean)
     de_orphan = Column(Boolean)
     de_gnomecat = relationship('Categories', secondary='cattodesktop')
+    de_catexcluded = relationship('Categories', secondary='excludedtodesktop')
 
     def fill_record(self, app_entry):
         """Fill application data"""
@@ -235,13 +259,11 @@ def cat_apps(cat_entry):
             # search for .desktop in DesktopApps
             catsearch = BaseInfo.session.query(
                 DesktopApps).filter(DesktopApps.de_file == tmp).one()
-            
         # not in database, so add it as an orphan
         except NoResultFound:
             catsearch = DesktopApps(de_file=tmp,de_orphan=True)
             BaseInfo.session.add(catsearch)
             BaseInfo.session.commit()
-            
         # multi entries if a system and user .desktop are
         # present 
         except MultipleResultsFound:
