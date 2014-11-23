@@ -18,11 +18,16 @@ DB_MSG_ECHO = False
 # Structure to hold category information
 class DatabaseInit(object):
 
-
     def __init__(self):
         logger.info('Initialize database.')
          
         BaseInfo.db_path = os.path.expanduser(APP_STORE + "/catgor.db")
+
+        # remove old database file        
+        try:
+            os.remove(BaseInfo.db_path)
+        except OSError:
+            pass
 
     # change item to lower case
     # used local only

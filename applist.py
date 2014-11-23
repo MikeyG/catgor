@@ -112,15 +112,4 @@ class AppList( ):
         except exc.SQLAlchemyError:
             logger.error("Commit error")
 
-    # will be logger output in future    
-    def _print_app(self, entry):
-        logger.debug("********************************************")
-        print entry.de_name
-        print entry.de_gname
-        print entry.de_nodisp 
-        print entry.de_hidden
-        print entry.de_onlyshow
-        print entry.de_notshow
-        print entry.de_cat
-        print entry.de_path
                         

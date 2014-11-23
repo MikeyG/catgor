@@ -22,6 +22,8 @@ Base = declarative_base()
 # *************************************************************
 # Categories ORM class to save category specific data to the database
 #
+# https://developer.gnome.org/menu-spec/
+#
 # Struct: Categories
 #   category - 
 #   name -  
@@ -36,9 +38,8 @@ class Categories(Base):
     category = Column(String)
     name = Column(String)
     translate = Column(Boolean)
-#    apps = Column(String)
-    apps = relationship('CategoryList', secondary='cattoapps')    
-    categories = Column(String)   
+    apps = relationship('DesktopApps', secondary='cattodesktop')    
+    categories = relationship('CategoryList', secondary='cattoapps')   
     excluded_apps = Column(String)
 
     def fill_record(self, cat_entry):
@@ -58,20 +59,20 @@ class Categories(Base):
             # search for .desktop app, all apps should be in  DesktopApps
             # by this point	
             try:
-                catapp = BaseInfo.session.query(
+                catasignedapps = BaseInfo.session.query(
                     DesktopApps).filter(DesktopApps.de_file==tmp).one()
                         
             # we get here because an app (.desktop) exists in system and
             # user directory, so query again and get user .desktop            
             except MultipleResultsFound:
-                catapp = BaseInfo.session.query(
+                catasignedapps = BaseInfo.session.query(
                     DesktopApps).filter(and_(DesktopApps.de_file==tmp,
                         DesktopApps.de_user==True)).one()                        
             
             # add to to table via association table CatToDesktop
-            #self.apps.append(catapp)
+            self.apps.append(catasignedapps)
 
-        # handle categories in each category    
+        # handle categories to include in each category    
         for tmp in cat_entry.categories:
             # search 	
             catcats = BaseInfo.session.query(
@@ -89,18 +90,26 @@ class Categories(Base):
             # add to to table via association table CatToExclude
             self.apps.append(exapps)
 
+# Category list association tables
+class GcatDesktop (Base):
+    __tablename__ = 'cattodesktop'
+    category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True) 
+    desktop_id = Column(Integer, ForeignKey('desktop.id'), primary_key=True)
+
 
 # *************************************************************
 # Desktop_Apps ORM class to save application specific data to the database
+#
+# http://standards.freedesktop.org/desktop-entry-spec/latest/
 #
 # Struct: Desktop_Apps
 #   de_file - actual .desktop file name
 #   de_name - name - Specific name of the application 
 #   de_gname - generic name - Generic name of the application 
 #   de_nodisp - NoDisplay - NoDisplay means "this application exists, 
-#       but don't display it in the menus"
+#       but don't display it in the menus" - not used in database
 #   de_hidden - Hidden - the user deleted (at his level) something 
-#       that was present 
+#       that was present - not used in database
 #   de_onlyshow - 
 #   de_notshow - 
 #   de_cat - List of application categories
@@ -109,21 +118,19 @@ class Categories(Base):
 #   de_orphan - .desktop file does not exist in file system
 #                but in overview dconf   
 
-
 class DesktopApps(Base):
     __tablename__ = 'desktop'
     id = Column(Integer, primary_key=True)
     de_file = Column(String)   
     de_name = Column(String)
     de_gname = Column(String)
-#    de_nodisp = Column(Boolean)
-#    de_hidden = Column(Boolean)
     de_onlyshow = relationship('DisplayManager', secondary='onlyshow')
     de_notshow = relationship('DisplayManager', secondary='noshow')
     de_cat = relationship('CategoryList', secondary='desktocats')
     de_path = Column(String)
     de_user = Column(Boolean)
     de_orphan = Column(Boolean)
+    de_gnomecat = relationship('Categories', secondary='cattodesktop')
 
     def fill_record(self, app_entry):
         """Fill application data"""
@@ -278,3 +285,28 @@ def dm_list(dm_entry):
             BaseInfo.session.add(dmlist)
             BaseInfo.session.commit()             
                 
+# ************** Create Category DB **************
+#
+def dump_cats( ):
+
+    categories = BaseInfo.session.query(Categories).all()
+        
+    for cat in categories:
+        print "*****************************"
+        print "Category:   %s" % cat.category
+        print "Name:       %s" % cat.name
+        if cat.translate:
+            print "Translate:  True"               
+        else:
+            print "Translate:  False"        
+        for appentry in cat.apps:
+           print "    App Name:   %s" % appentry.de_name
+           print "       File Name:  %s" % appentry.de_file
+           if appentry.de_user:
+               print "       User DE App"
+           else:
+               print "       System DE App"
+
+
+
+        

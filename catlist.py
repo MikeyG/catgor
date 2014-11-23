@@ -48,6 +48,8 @@ class GetCats( ):
             self._get_folder_entry(category)
 
         logger.debug('get_categories done')
+        
+        models.dump_cats( )
          
     # *** _get_categories(self) - local
     # get categories using gsettings - folder-children
@@ -112,9 +114,6 @@ class GetCats( ):
         # fill in values  
         cat_record.fill_record(cat_entry) 
 
- #       logger.debug("Cat: Created cat record.")        
-        
-        # add/commit to local database
         BaseInfo.session.add(cat_record)
 
         try:
@@ -122,13 +121,4 @@ class GetCats( ):
         except exc.SQLAlchemyError:
             logger.error("Commit error")
 
-
-    # will be logger output in future    
-    def _print_cat(self, entry):
-        print "***********************" + entry.category + "********************"
-        print entry.name
-        print entry.translate
-        print entry.apps
-        print entry.categories
-        print entry.excluded_apps
 
