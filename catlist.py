@@ -50,6 +50,7 @@ class GetCats( ):
         logger.debug('get_categories done')
         
         models.dump_cats( )
+        models.dump_apps( ) 
          
     # *** _get_categories(self) - local
     # get categories using gsettings - folder-children

@@ -15,9 +15,7 @@ import os
 APP_STORE = "~/.local/share/applications-categories"
 
 """
-The classes ... blah TBD words
-
-
+All the Gnome category and desktop entry data is stored in database.
 """
 
 
@@ -337,5 +335,29 @@ def dump_cats( ):
             else:
                 fileout.write("       System DE App\n")
 
+    fileout.close()
 
-                
+
+# ************** Dump Application DB **************
+#
+def dump_apps( ):
+ 
+    applications = BaseInfo.session.query(DesktopApps).all()                
+
+    fileout = open(os.path.expanduser(APP_STORE+"/catgor_app.dump"), 'w')
+
+    for app in applications:
+        fileout.write("*****************************\n")
+        fileout.write("Application:  %s\n" % app.de_name)        
+        fileout.write("    File:     %s\n" % app.de_file) 
+        if app.de_user:
+            fileout.write("    User App\n")
+        else:
+            fileout.write("    System App\n")        
+        if app.de_orphan:
+            fileout.write("    Orphan App\n")
+
+    fileout.close()
+
+
+
