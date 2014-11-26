@@ -13,6 +13,8 @@ from base import BaseInfo
 from applist import AppList
 from catlist import GetCats
 
+
+# Need to move to sep const file
 # use same directory as gnome-catgen
 APP_STORE = "~/.local/share/applications-categories"
 

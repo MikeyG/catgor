@@ -9,6 +9,11 @@ from base import BaseInfo
 import logging
 logger = logging.getLogger('catgor')
 
+import os
+# Need to move to sep const file
+# use same directory as gnome-catgen
+APP_STORE = "~/.local/share/applications-categories"
+
 """
 The classes ... blah TBD words
 
@@ -306,29 +311,31 @@ def dm_list(dm_entry):
             dmlist = DisplayManager(dm_name=tmp)
             BaseInfo.session.add(dmlist)
             BaseInfo.session.commit()             
-                
-# ************** Create Category DB **************
+
+
+# ************** Dump Category DB **************
 #
 def dump_cats( ):
-
+ 
     categories = BaseInfo.session.query(Categories).all()
-        
+ 
+    fileout = open(os.path.expanduser(APP_STORE+"/catgor_cat.dump"), 'w')
+      
     for cat in categories:
-        print "*****************************"
-        print "Category:   %s" % cat.category
-        print "Name:       %s" % cat.name
+        fileout.write("*****************************\n")
+        fileout.write("Category:   %s\n" % cat.category)
+        fileout.write("Name:       %s\n" % cat.name)
         if cat.translate:
-            print "Translate:  True"               
+            fileout.write("Translate: True\n")
         else:
-            print "Translate:  False"        
+            fileout.write("Translate: False\n")
         for appentry in cat.apps:
-           print "    App Name:   %s" % appentry.de_name
-           print "       File Name:  %s" % appentry.de_file
-           if appentry.de_user:
-               print "       User DE App"
-           else:
-               print "       System DE App"
+            fileout.write("   App Name:   %s\n" % appentry.de_name)
+            fileout.write("       File Name: %s\n" % appentry.de_file)
+            if appentry.de_user:
+                fileout.write("       User DE App\n")
+            else:
+                fileout.write("       System DE App\n")
 
 
-
-        
+                
