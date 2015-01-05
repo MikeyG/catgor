@@ -51,7 +51,7 @@ def _start_logging(verbose, debug):
     if debug:
         logger.setLevel(logging.DEBUG)
     else:
-		logger.setLevel(logging.INFO)
+        logger.setLevel(logging.INFO)
        
     fh = logging.FileHandler(
         os.path.expanduser(APP_STORE+"/catgor.log"))
@@ -67,9 +67,9 @@ def _start_logging(verbose, debug):
     if verbose:
         ch = logging.StreamHandler( )
         if debug:
-			ch.setLevel(logging.DEBUG)
+            ch.setLevel(logging.DEBUG)
         else:
-			ch.setLevel(logging.INFO)			
+            ch.setLevel(logging.INFO)			
 			
         ch.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
         logger.addHandler(ch)
@@ -98,12 +98,12 @@ def _backup_db(logger):
     try:
         os.remove(os.path.expanduser(APP_STORE + "/catgor.bak"))
     except OSError:
-		pass
+        pass
 
     # backup
     try:
-		os.rename(BaseInfo.db_path,
-		    os.path.expanduser(APP_STORE + "/catgor.bak"))
+        os.rename(BaseInfo.db_path,
+		      os.path.expanduser(APP_STORE + "/catgor.bak"))
     except OSError:
         pass
 
@@ -131,18 +131,18 @@ def main():
     
     # print version and exit, executes sys.exit(0)
     if args.version:
-		print 'Catgor version: %s.%s' % (VER_MAJOR, VER_MINOR)
-		sys.exit(0)
+        print 'Catgor version: %s.%s' % (VER_MAJOR, VER_MINOR)
+        sys.exit(0)
 
     # catch use of both -i and -s 
     if (args.initialize and args.spec):
-		print "ERROR: Use only -i or -s flags, not both"
-		parser.print_help()
-		sys.exit(0)
+        print "ERROR: Use only -i or -s flags, not both"
+        parser.print_help()
+        sys.exit(0)
 		        
     # if debug set then verbose should be true
     if args.debug:
-		args.verbose = 'True'  
+        args.verbose = 'True'  
 
     # call to start logging
     _start_logging(args.verbose,args.debug)
@@ -156,7 +156,7 @@ def main():
 
     # check for existing database
     if os.path.isfile(BaseInfo.db_path):
-	logger.debug("Found existing database")
+        logger.debug("Found existing database")
     
         # backup current database
         _backup_db(logger) 
