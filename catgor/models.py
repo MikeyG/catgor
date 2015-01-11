@@ -1,3 +1,22 @@
+#   Catgor - Gnome 3 Overview category editor
+#   Copyright (C) 2014-2015 Michael Greene <mikeos2@gmail.com>
+#
+#   Some parts used from:
+#   MenuLibre - Advanced fd.o Compliant Menu Editor
+#   Copyright (C) 2012-2014 Sean Davis <smd.seandavis@gmail.com>
+#
+#   This program is free software: you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License version 3, as published
+#   by the Free Software Foundation.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranties of
+#   MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR
+#   PURPOSE.  See the GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License along
+#   with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from sqlalchemy import Table, Column, ForeignKey, Integer, String, Boolean, and_
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -16,6 +35,9 @@ from catgorbase import BaseInfo
 """
 All the Gnome category and desktop entry data is stored in database.
 """
+
+# Tables: Categories, GcatDesktop, ExcludedDesktop, DesktopApps, 
+# CategoryList, CatApps, DeskCats, DisplayManager, OnlyshowToDM, NoshowToDM
 
 # The declarative_base() callable returns a new base class from 
 # which all mapped classes should inherit. When the class definition is 
@@ -311,9 +333,9 @@ def dm_list(dm_entry):
 
 # ************** Dump Category DB **************
 #
-def dump_cats( ):
+def dump_cats(session):
  
-    categories = BaseInfo.session.query(Categories).all()
+    categories = session.query(Categories).all()
  
     fileout = open(os.path.expanduser(APP_STORE+"/catgor_cat.dump"), 'w')
       
@@ -338,9 +360,9 @@ def dump_cats( ):
 
 # ************** Dump Application DB **************
 #
-def dump_apps( ):
+def dump_apps(session):
  
-    applications = BaseInfo.session.query(DesktopApps).all()                
+    applications = session.query(DesktopApps).all()                
 
     fileout = open(os.path.expanduser(APP_STORE+"/catgor_app.dump"), 'w')
 

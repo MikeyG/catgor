@@ -1,10 +1,24 @@
+#   Catgor - Gnome 3 Overview category editor
+#   Copyright (C) 2014-2015 Michael Greene <mikeos2@gmail.com>
+#
+#   Some parts used from:
+#   MenuLibre - Advanced fd.o Compliant Menu Editor
+#   Copyright (C) 2012-2014 Sean Davis <smd.seandavis@gmail.com>
+#
+#   This program is free software: you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License version 3, as published
+#   by the Free Software Foundation.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranties of
+#   MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR
+#   PURPOSE.  See the GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License along
+#   with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from sqlalchemy import create_engine, __version__ 
 from sqlalchemy.orm import sessionmaker
-
-
-from catgorbase import BaseInfo
-from models import Base
-from catgorconst import APP_STORE
 
 import os
 
@@ -12,46 +26,41 @@ import os
 import logging
 logger = logging.getLogger('catgor')
 
+from models import Base
+
 # sqlalchemy debug
+#DB_MSG_ECHO = True
 DB_MSG_ECHO = False
 
+# change item to lower case
+# used local only
+def _nocase_lower(item):
+    return unicode(item).lower()
 
-# Structure to hold category information
-class DatabaseInit(object):
-
-    def __init__(self):
-        logger.info('Initialize database.')
-         
-        BaseInfo.db_path = os.path.expanduser(APP_STORE + "/catgor.db")
-
-    # change item to lower case
-    # used local only
-    def _nocase_lower(item):
-        return unicode(item).lower()
-
-    # Setup database
-    # Ref:  http://docs.sqlalchemy.org/en/rel_0_9/orm/tutorial.html
-    #       http://pypix.com/tools-and-tips/essential-sqlalchemy/
-    def get_db_session(self):
+# Setup database
+# Ref:  http://docs.sqlalchemy.org/en/rel_0_9/orm/tutorial.html
+#       http://pypix.com/tools-and-tips/essential-sqlalchemy/
+def get_db_session(db_path):
     	
-        logger.debug('get_db_session start')
+    logger.debug('get_db_session start')
 
-        # Ex: engine = create_engine('sqlite:///:memory:', echo=True)
-        # echo True - logging to python
-        # uses mysql-python as the default DBAPI
-        engine = create_engine('sqlite:///%s' % BaseInfo.db_path, echo=DB_MSG_ECHO)
-        Base.metadata.create_all(engine)
+    # Ex: engine = create_engine('sqlite:///:memory:', echo=True)
+    # echo True - logging to python
+    engine = create_engine('sqlite:///%s' % db_path, echo=DB_MSG_ECHO)
+    Base.metadata.create_all(engine)
+                
+    # creates a factory and assign the name Session        
+    Session = sessionmaker(bind=engine)
+    session = Session()
 
-        # creates a factory and assign the name Session    
-        Session = sessionmaker(bind=engine)
-        session = Session()
-#        conn = session.connection()
-#        conn.connection.create_function('lower', 1, _nocase_lower)
-        BaseInfo.session = session
-        
-        logger.debug('get_db_session finish')
+    conn = session.connection()
+    conn.connection.create_function('lower', 1, _nocase_lower)
 
-    # return sql version
-    def get_sqlalchemy_version(self):
-        return __version__
+    logger.debug('get_db_session finish')
+
+    return session
+
+# return sql version
+def get_sqlalchemy_version( ):
+    return __version__
     

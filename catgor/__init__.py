@@ -21,17 +21,17 @@ import optparse
 import sys
 import os
 import signal
+from shutil import copyfile
 
 # python built-in logging 
 import logging
 import argparse
 
 from catgorconst import APP_STORE, VER_MAJOR, VER_MINOR
-import catgortools 
+from catgortools import get_db_session, get_sqlalchemy_version
 from catgorbase import BaseInfo
 from applist import AppList
 from catlist import GetCats
-
 from models import dump_apps, dump_cats
 
 # ************************************************************
@@ -76,20 +76,24 @@ def _start_logging(verbose, debug):
 
     logger.info('Logging started.')
 
-
+# ************************************************************
+#                   Create Directories
+# ************************************************************
 # creates directories - called from main( ) create app 
 # directory if needed
 def _create_dirs( ):
     """Create dirs"""
-
     try:
         os.mkdir(APP_STORE)
     except OSError:
         pass
 
+# ************************************************************
+#                   Backup Database
+# ************************************************************
 # deletes old backup and renames existing catgor.db to
 # catgor.bak
-def _backup_db(logger):
+def _backup_db(logger, db_path):
     """Backup current database"""
 
     logger.debug("Backup database")
@@ -102,12 +106,13 @@ def _backup_db(logger):
 
     # backup
     try:
-        os.rename(BaseInfo.db_path,
-		      os.path.expanduser(APP_STORE + "/catgor.bak"))
+        copyfile(db_path, os.path.expanduser(APP_STORE + "/catgor.bak"))
     except OSError:
         pass
 
-
+# ************************************************************
+#                        Main
+# ************************************************************
 def main():
     """Main application for Catgor"""
 
@@ -152,14 +157,22 @@ def main():
     logger.debug("Catgor version: %s.%s" % (VER_MAJOR, VER_MINOR))
 
     # path to database
-    BaseInfo.db_path = os.path.expanduser(APP_STORE + "/catgor.db")
+    db_path = os.path.expanduser(APP_STORE + "/catgor.db")
 
     # check for existing database
-    if os.path.isfile(BaseInfo.db_path):
+    if os.path.isfile(db_path):
         logger.debug("Found existing database")
     
         # backup current database
-        _backup_db(logger) 
+        _backup_db(logger, db_path)
+
+        # remove old database file for initialize or spec
+        if (args.initialize or args.spec):
+            logger.debug("Delete current database")
+            try:
+                os.remove(db_path)
+            except OSError:
+                pass        
     else:
         # if no database and -i or -s not specified then
         # we need to initialize
@@ -167,21 +180,15 @@ def main():
         if not (args.initialize or args.spec):
             args.initialize = 'True'
 
-    # remove old database file for initialize or spec
-    if (args.initialize or args.spec):
-        logger.debug("Delete current database")
-        try:
-            os.remove(BaseInfo.db_path)
-        except OSError:
-            pass
-
     # Setup database for use    
-    dbsession = catgortools.DatabaseInit( )    
-    logger.info("sqlalchemy version %s" % dbsession.get_sqlalchemy_version( )) 
-    logger.info("DB Path %s" % BaseInfo.db_path)
-    dbsession.get_db_session( )
+    session = get_db_session(db_path)
+    logger.info("sqlalchemy version %s" % get_sqlalchemy_version( )) 
+    logger.info("DB Path %s" % db_path)
+
+    BaseInfo.session = session
 
     if (args.initialize or args.spec):
+       
         # collect all the desktop entries 
         AppList( ).get_desktop( )
 
@@ -192,11 +199,15 @@ def main():
             logger.debug('Initialize database to current.')
 	    
             # Get current overview configuration and insert into database
-            GetCats( ).get_categories( )
+            GetCats( ).get_categories()
+    
+    if args.debug:
+        dump_cats(session)
+        dump_apps(session)     
 
-    dump_cats( )
-    dump_apps( )     
+    session.close()
 
+    # **** At this point database should be ready for use
 
 
     # Run the application.
