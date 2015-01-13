@@ -17,6 +17,8 @@
 #   You should have received a copy of the GNU General Public License along
 #   with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from gi.repository import Gtk, Gio
+
 import optparse
 import sys
 import os
@@ -33,6 +35,8 @@ from catgorbase import BaseInfo
 from applist import AppList
 from catlist import GetCats
 from models import dump_apps, dump_cats
+
+from CatgorApplication import CatgorApplication
 
 # ************************************************************
 #                   Configure logger
@@ -211,9 +215,8 @@ def main():
 
 
     # Run the application.
-#    app = CatgorApplication.Application()
-#    exit_status = app.run(None)
-#    sys.exit(exit_status)
+    app = CatgorApplication()
+    exit_status = app.run(None)
+    sys.exit(exit_status)
 
-    
 
