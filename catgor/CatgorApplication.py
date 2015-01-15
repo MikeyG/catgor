@@ -55,6 +55,24 @@ class CatgorApplication(Gtk.Application):
     def new_callback(self, action, parameter):
         print("You clicked \"New\"")
 
+    def help_cb(self, widget, data=None):
+        """Help callback function."""
+        question = "Do you want to read the Catgor manual online?"
+        dialog = Gtk.MessageDialog(transient_for=self.win, modal=True,
+                                    message_type=Gtk.MessageType.QUESTION,
+                                    buttons=Gtk.ButtonsType.NONE,
+                                    text=question)
+        dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Read Online", Gtk.ResponseType.OK)
+        dialog.set_title("Online Documentation")
+        details = "You will be redirected to the documentation website where the help pages are maintained."
+        dialog.format_secondary_markup(details)
+        if dialog.run() == Gtk.ResponseType.OK:
+            help_url = "http://www.mgreene.org"
+            logger.debug("Navigating to help page, %s" % help_url)
+            menulibre_lib.show_uri(self.win, help_url)
+        dialog.destroy()
+
     def about_cb(self, widget, data=None):
         """About callback function.  Display the AboutDialog."""
         # Create and display the AboutDialog.
