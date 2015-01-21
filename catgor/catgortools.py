@@ -17,6 +17,8 @@
 #   You should have received a copy of the GNU General Public License along
 #   with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from gi.repository import Gtk
+
 from sqlalchemy import create_engine, __version__ 
 from sqlalchemy.orm import sessionmaker
 
@@ -83,4 +85,19 @@ def get_builder(builder_file_name):
     builder.add_from_file(ui_filename)
     return builder
     
+def show_uri(parent, link):
+    """Open a web browser to the specified link."""
+    from gi.repository import Gtk  # pylint: disable=E0611
+    screen = parent.get_screen()
+    Gtk.show_uri(screen, link, Gtk.get_current_event_time())
 
+
+def alias(alternative_function_name):
+    '''see http://www.drdobbs.com/web-development/184406073#l9'''
+    def decorator(function):
+        '''attach alternative_function_name(s) to function'''
+        if not hasattr(function, 'aliases'):
+            function.aliases = []
+        function.aliases.append(alternative_function_name)
+        return function
+    return decorator
